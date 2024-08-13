@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
 import '../main.dart';
 
 class NotificationService {
   NotificationService._();
-
   factory NotificationService() => NotificationService._();
-
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   Future<void> initNotifications() async {
     const AndroidInitializationSettings androidInitializationSettings = AndroidInitializationSettings(
       "@mipmap/ic_launcher",
-    ); // Use the correct resource path
+    );
 
     final DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -28,28 +25,55 @@ class NotificationService {
     );
 
     await flutterLocalNotificationsPlugin.initialize(initializationSettings,
-        onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,);
-       // onDidReceiveBackgroundNotificationResponse: onDidReceiveBackgroundNotificationResponse);
+        onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
+        onDidReceiveBackgroundNotificationResponse: onDidReceiveBackgroundNotificationResponse);
   }
 
-  void onDidReceiveBackgroundNotificationResponse(NotificationResponse notificationResponse) {
-    debugPrint("----------------- onDidReceiveBackgroundNotificationResponse called -----------------");
-  }
-
-  void showNotifications({int id = 10, String? title, String? body, String? payload}) async {
+  void showNotifications({int id = 10, String? title, String? body, String? payload,int? badge}) async {
     try {
-      debugPrint("badgeCount in showNotifications : $badgeCount");
-
+      debugPrint("badgeCount in showNotifications : $badge");
       flutterLocalNotificationsPlugin.show(
         id,
         title,
         body,
-        notificationDetails(count: badgeCount),
+        notificationDetails(count: badge),
         payload: payload,
       );
     } catch (error, stackTrace) {
       debugPrint("------------ERROR : $error---------------");
       debugPrint("------------stackTrace : $stackTrace---------------");
+    }
+  }
+
+  void updateBadgeOnBackground(int count) async {
+    AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'channelId',
+      'channelName',
+      importance: Importance.max,
+      priority: Priority.max,
+      enableVibration: false,
+      playSound: false,
+      silent: true,
+      number: count,
+    );
+
+    NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+    debugPrint("Silent Notification triggered with badge value : $count");
+    await flutterLocalNotificationsPlugin.show(
+     100, // Use a different notification ID for silent updates
+      null, // Empty title for silent update
+      null, // Empty body for silent update
+      platformChannelSpecifics,
+    );
+    debugPrint("Silent Notification ended");
+    debugPrint("flutterLocalNotificationsPlugin. cancel -----> triggered");
+    await Future.delayed(const Duration(milliseconds:300));
+    var variable=await flutterLocalNotificationsPlugin.getActiveNotifications();
+    for(int i=0;i<variable.length;i++){
+      if(variable[i].id==100){
+        await flutterLocalNotificationsPlugin.cancel(100);
+        debugPrint("flutterLocalNotificationsPlugin. cancel for index $i-----> ended");
+      }
     }
   }
 
@@ -88,13 +112,4 @@ class NotificationService {
 
     debugPrint("---------------------------------------------------------------------");
   }
-// Future<void> updateBadgeCount(int? count) async {
-//    showNotifications(
-//     id: 1,
-//     title: 'Badge Updated',
-//     body: 'Badge count updated value : $count',
-//     payload: 'payload',
-//     badgeCount: count,
-//   );
-// }
 }

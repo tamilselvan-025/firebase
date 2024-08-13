@@ -1,27 +1,33 @@
 import 'package:firebase/firebase/firebase_api.dart';
 import 'package:firebase/firebase/notification_service.dart';
-import 'package:firebase/firebase/screens/notification_page.dart';
+import 'package:firebase/firebase/screens/chat_list_screen.dart';
+import 'package:firebase/firebase/screens/initial_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'firebase_options.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 String pathOfAppIcon='';
-int badgeCount = 0;
+int badgeCount=0;
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage? message)async{
   await Firebase.initializeApp(options:  DefaultFirebaseOptions.currentPlatform);
   if(message!=null){
-    debugPrint("firebaseMessagingBackgroundHandler message is not null");
+    debugPrint("message.notification ${message.notification}");
+    debugPrint("firebaseMessagingBackgroundHandler message is not null [MESSAGE: ${message.data}]");
     return NotificationService().showNotifications(id: message.data['id'],title: message.data['title'],body: message
         .data['body'],payload: message.data['payload']);
   }
   else{
-    debugPrint("firebaseMessagingBackgroundHandler message is null!");
+    debugPrint("firebaseMessagingBackgroundHandler message is null");
   }
 }
-void main() async {
+void onDidReceiveBackgroundNotificationResponse(NotificationResponse notificationResponse) {
+  debugPrint("----------------- onDidReceiveBackgroundNotificationResponse called -----------------");
+}
 
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -33,17 +39,11 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   runApp(
-    MaterialApp(
-      home: const Home(),
-      routes: {
-        "notification_screen": (context) => const NotificationPage(),
-      },
-      navigatorKey: navigatorKey,
-      title: "FirebaseProject",
-    ),
+    const InitialScreen()
   );
 }
-class Home extends StatefulWidget {
+
+class Home extends StatefulWidget  {
   const Home({super.key});
 
   @override
@@ -51,10 +51,6 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,17 +74,25 @@ class _HomeState extends State<Home> {
                 badgeCount++;
                 NotificationService().showNotifications(id: 1, title: "Title :Badge Add", body: "badge value : "
                     "$badgeCount",
-                  payload: 'payload',);
+                  payload: 'payload',badge: badgeCount);
                 setState(() {});
               },
               child: const Text("Add Notification"),
             ),
             ElevatedButton(
+              onPressed: () {
+                badgeCount--;
+                NotificationService().showNotifications(id: 1, title: "Title :Badge Sub", body: "badge value : "
+                    "$badgeCount",
+                    payload: 'payload',badge: badgeCount);
+                setState(() {});
+              },
+              child: const Text("Decrement Notification"),
+            ),
+            ElevatedButton(
               onPressed: () async {
                 badgeCount = 0;
-                NotificationService().showNotifications(id: 2, title: "Title :Badge Deleted", body: "badge value : "
-                    "$badgeCount",
-                    payload: 'payload');
+                NotificationService().flutterLocalNotificationsPlugin.cancelAll();
                 setState(() {});
               },
               child: const Text("Delete badge"),
@@ -108,12 +112,10 @@ class _HomeState extends State<Home> {
         ),
       ),
       floatingActionButton: FloatingActionButton(onPressed: () async {
-        debugPrint("badgeCount : $badgeCount");
-        debugPrint(
-            "FirebaseMessaging.onMessageOpenedApp.isEmpty : ${await FirebaseMessaging.onMessageOpenedApp.isEmpty}");
-        debugPrint("FirebaseMessaging.onMessage.isEmpty : ${await FirebaseMessaging.onMessage.isEmpty}");
-        debugPrint("FirebaseMessaging.onMessage.length : ${await FirebaseMessaging.onMessage.length}");
-      }),
+       Navigator.push(context,MaterialPageRoute(builder: (context)=>const ChatListScreen()));
+      },
+        child: const Icon(Icons.arrow_forward_outlined),
+      ),
     );
   }
 }

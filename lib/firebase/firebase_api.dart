@@ -24,43 +24,43 @@ class FirebaseApi {
   }
 
   Future<void> configureFirebaseListeners() async {
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message)async {
       debugPrint("configureFirebaseListeners called");
       RemoteNotification? notification = message.notification;
       AndroidNotification? android = message.notification?.android;
       if (notification != null && android != null) {
-
+        badgeCount++;
         debugPrint("message.data['badge'] : ${message.data['badge']}");
-        return NotificationService().showNotifications(id: message.data['id']??10,title: message.data['title']??"Title "
+         NotificationService().showNotifications(id: message.data['id']??10,title: message.data['title']??"Title "
             "Null",body:
         message
-            .data['body']??"Body is null",payload: message.data['payload']??"payload is null", );
+            .data['body']??"Body is null",payload: message.data['payload']??"payload is null", badge: badgeCount);
+         await Future.delayed(const Duration(seconds: 10));
+         NotificationService().flutterLocalNotificationsPlugin.cancel(message.data['id']??10);
+
       }
     });
   }
-
 
   void initNotifications() async {
     NotificationSettings notificationSettings = await firebaseMessaging.requestPermission(
      alert: true,
     );
-    debugPrint("-----------------NotificationSettings-------------------");
-    debugPrint("notificationSettings.alert : ${notificationSettings.alert}");
-    debugPrint("notificationSettings.announcement : ${notificationSettings.announcement}");
-    debugPrint("notificationSettings.authorizationStatus :${notificationSettings.authorizationStatus}");
-    debugPrint("notificationSettings.badge : ${notificationSettings.badge}");
-    debugPrint("notificationSettings.carPlay : ${notificationSettings.carPlay}");
-    debugPrint("notificationSettings.criticalAlert : ${notificationSettings.criticalAlert}");
-    debugPrint("notificationSettings.lockScreen : ${notificationSettings.lockScreen}");
-    debugPrint("notificationSettings.notificationCenter : ${notificationSettings.notificationCenter}");
-    debugPrint("notificationSettings.showPreviews ${notificationSettings.showPreviews}");
-    debugPrint("notificationSettings.sound : ${notificationSettings.sound}");
-    debugPrint("notificationSettings.timeSensitive : ${notificationSettings.timeSensitive}");
-    debugPrint("--------------------------------------------------------");
+    // debugPrint("-----------------NotificationSettings-------------------");
+    // debugPrint("notificationSettings.alert : ${notificationSettings.alert}");
+    // debugPrint("notificationSettings.announcement : ${notificationSettings.announcement}");
+    // debugPrint("notificationSettings.authorizationStatus :${notificationSettings.authorizationStatus}");
+    // debugPrint("notificationSettings.badge : ${notificationSettings.badge}");
+    // debugPrint("notificationSettings.carPlay : ${notificationSettings.carPlay}");
+    // debugPrint("notificationSettings.criticalAlert : ${notificationSettings.criticalAlert}");
+    // debugPrint("notificationSettings.lockScreen : ${notificationSettings.lockScreen}");
+    // debugPrint("notificationSettings.notificationCenter : ${notificationSettings.notificationCenter}");
+    // debugPrint("notificationSettings.showPreviews ${notificationSettings.showPreviews}");
+    // debugPrint("notificationSettings.sound : ${notificationSettings.sound}");
+    // debugPrint("notificationSettings.timeSensitive : ${notificationSettings.timeSensitive}");
+    // debugPrint("--------------------------------------------------------");
     final fcmToken = await firebaseMessaging.getToken();
-
     debugPrint("fcmToken : $fcmToken");
   }
-
 
 }
